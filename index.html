@@ -65,7 +65,9 @@
       async function checkUser() {
         try {
           const response = await fetch('http://localhost:3080/user', {
-            RET: '1',
+            headers: {
+              RET: '1',
+            },
           });
           if (response.ok) {
             const userInfo = await response.json();
