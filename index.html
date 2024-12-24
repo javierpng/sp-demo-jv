@@ -55,7 +55,7 @@
 
       async function checkUser() {
         try {
-          const response = await fetch('/user', {
+          const response = await fetch('http://localhost:3080/user', {
             credentials: 'include',
           });
           if (response.ok) {
@@ -73,7 +73,7 @@
       }
 
       button.addEventListener('click', () => {
-        window.location.href = `/create-session`;
+        window.location.href = `http://localhost:3080/create-session`;
       });
 
       checkUser();
