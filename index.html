@@ -47,16 +47,36 @@
         <br /><br />
       </div>
       <div>
-        <button class="button">Log in</button>
+        <button class="button" id="login">Log in</button>
       </div>
     </div>
     <script>
-      const button = document.querySelector('.button');
-      const state = Math.random().toString(36).substring(2, 15);
-      const nonce = crypto.randomUUID();
+      const button = document.getElementById('login');
+
+      async function checkUser() {
+        try {
+          const response = await fetch('/user', {
+            credentials: 'include',
+          });
+          if (response.ok) {
+            const userInfo = await response.json();
+            console.log(userInfo);
+            document.querySelector('.text').innerHTML = `<p>Welcome, ${userInfo.name}</p>`;
+            button.style.display = 'none';
+          } else {
+            button.style.display = 'block';
+          }
+        } catch (error) {
+          console.error('Error checking user info:', error);
+          button.style.display = 'block';
+        }
+      }
+
       button.addEventListener('click', () => {
-        window.location.href = `http://localhost:3080/create-session`;
+        window.location.href = `/create-session`;
       });
+
+      checkUser();
     </script>
   </body>
 </html>
