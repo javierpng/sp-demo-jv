@@ -16,6 +16,11 @@
         background-color: #fff;
         text-align: center;
       }
+      .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
       .logo {
         margin: 20px;
       }
@@ -34,6 +39,7 @@
         font-family: Poppins;
         font-size: x-large;
         font-style: bold;
+        margin: 20px;
       }
     </style>
   </head>
@@ -57,9 +63,7 @@
       const button = document.getElementById('login');
       async function checkUser() {
         try {
-          const response = await fetch('http://localhost:3080/user', {
-            credentials: 'include',
-          });
+          const response = await fetch('http://localhost:3080/user');
           if (response.ok) {
             const userInfo = await response.json();
             console.log(userInfo);
