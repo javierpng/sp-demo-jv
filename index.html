@@ -64,7 +64,7 @@
       const button = document.getElementById('login');
       async function checkUser() {
         try {
-          const response = await fetch('http://localhost:3080/user', {
+          const response = await fetch('https://0hk8k16vyc.execute-api.ap-southeast-1.amazonaws.com/dev/user', {
             headers: {
               RET: '1',
             },
@@ -85,7 +85,7 @@
       }
 
       button.addEventListener('click', () => {
-        window.location.href = `http://localhost:3080/create-session`;
+        window.location.href = `https://0hk8k16vyc.execute-api.ap-southeast-1.amazonaws.com/dev/create-session`;
       });
 
       checkUser();
