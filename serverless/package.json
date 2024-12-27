@@ -1,0 +1,32 @@
+{
+  "name": "sp-demo-jv",
+  "version": "1.0.0",
+  "description": "",
+  "main": "handler.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "jsonwebtoken": "^9.0.2",
+    "oauth4webapi": "^3.1.4",
+    "openid-client": "^5.6.5",
+    "passport-openidconnect": "^0.1.2"
+  },
+  "devDependencies": {
+    "prettier": "latest",
+    "serverless-offline": "^14.4.0",
+    "serverless-plugin-include-dependencies": "^6.1.1",
+    "serverless-s3-sync": "^3.4.0",
+    "serverless-webpack": "^5.15.0",
+    "webpack": "^5.97.1",
+    "webpack-node-externals": "^3.0.0"
+  },
+  "prettier": {
+    "printWidth": 120,
+    "singleQuote": true,
+    "trailingComma": "es5"
+  }
+}

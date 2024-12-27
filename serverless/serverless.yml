@@ -1,0 +1,71 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: spdemojv
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: sp-demo-jv
+service: sp-demo-jv
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-southeast-1
+  apiGateway:
+    minimumCompressionSize: 1024 # Enable compression for responses over 1KB
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+          Resource: arn:aws:s3:::sp-demo-jv/*
+
+resources:
+  Resources:
+    S3StaticSiteBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: sp-demo-jv
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: error.html
+
+functions:
+  create-session:
+    handler: handler.sessionInit
+    events:
+      - http:
+          path: create-session
+          method: get
+  get-JWKS:
+    handler: handler.getKey
+    events:
+      - http:
+          path: .well-known/jwks.json
+          method: get
+  redirect:
+    handler: handler.callback
+    events:
+      - http:
+          path: callback
+          method: get
+  get-user:
+    handler: handler.user
+    events:
+      - http:
+          path: user
+          method: get
+          cors: true
+  # serve:
+  #   handler: handler.serve
+  #   events:
+  #     - http:
+  #         path: /{proxy+}
+  #         method: get
+  #         integration: lambda-proxy
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    stage: dev
+    httpPort: 3080
