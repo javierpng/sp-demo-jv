@@ -64,7 +64,8 @@
       async function checkUser() {
         try {
             const response = await fetch('https://0hk8k16vyc.execute-api.ap-southeast-1.amazonaws.com/dev/user',{
-  method: 'GET', credentials:"include",
+  method: 'GET',
+  credentials:'include',
   headers: {
     'Content-Type': 'application/json', // Default for JSON APIs
   },
