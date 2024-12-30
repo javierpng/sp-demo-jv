@@ -46,14 +46,14 @@
   <body>
     <div class="container">
       <div class="logo">
-        <img src="assets/sp-logo.svg" alt="Logo" />
+        <img src="sp-logo.svg" alt="Logo" />
       </div>
       <div class="text">
         <p>This site is used for demo purposes only.</p>
         <br /><br />
       </div>
-      <div id="login_div">
-        <button class="button" id="login">Log in</button>
+      <div id="login_div" >
+        <button class="button" style="display: none" id="login">Log in</button>
       </div>
       <div id="user" style="display: none">
         <span id="content"></span>
@@ -64,7 +64,7 @@
       async function checkUser() {
         try {
             const response = await fetch('https://0hk8k16vyc.execute-api.ap-southeast-1.amazonaws.com/dev/user',{
-  method: 'GET',
+  method: 'GET', credentials:"include",
   headers: {
     'Content-Type': 'application/json', // Default for JSON APIs
   },
