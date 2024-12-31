@@ -53,14 +53,23 @@ functions:
       - http:
           path: user
           method: get
+          cors:
+            origin: 'https://javierpng.github.io'
+            headers: # <-- Specify allowed headers
+              - Content-Type
+              - Cookie
+            allowCredentials: true
+  serve:
+    handler: handler.serve
+    events:
+      - http:
+          path: / # Explicitly handle the root path
+          method: get
           cors: true
-  # serve:
-  #   handler: handler.serve
-  #   events:
-  #     - http:
-  #         path: /{proxy+}
-  #         method: get
-  #         integration: lambda-proxy
+      - http:
+          path: /{proxy+}
+          method: get
+          cors: true
 
 plugins:
   - serverless-offline

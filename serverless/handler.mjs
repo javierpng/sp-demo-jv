@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
 import * as jose from 'jose';
+import AWS from 'aws-sdk';
 
 let discoveryData;
 const readFromDiscoveryEndpoint = async () => {
@@ -39,6 +40,8 @@ function getContentType(filePath) {
       return 'image/gif';
     case 'json':
       return 'application/json';
+    case 'svg':
+      return 'image/svg+xml';
     case 'txt':
       return 'text/plain';
     default:
@@ -54,6 +57,36 @@ function generateCodeVerifier() {
 function generateCodeChallenge(code_verifier) {
   const hash = crypto.createHash('sha256').update(code_verifier).digest();
   return hash.toString('base64url');
+}
+
+async function getEcKey(keyType) {
+  let key;
+  let data;
+  try {
+    switch (keyType) {
+      case 'PRIVATE_SIG_KEY':
+        data = config.key['PRIVATE_SIG_KEY'];
+        break;
+      case 'PRIVATE_ENC_KEY':
+        data = config.key['PRIVATE_ENC_KEY'];
+        break;
+      default:
+        return null;
+    }
+    key = await jose.importJWK(
+      {
+        kty: data.kty,
+        crv: data.crv,
+        x: data.x,
+        y: data.y,
+        d: data.d,
+      },
+      'ES256'
+    );
+  } catch (error) {
+    console.log('error retrieving key: ', error);
+  }
+  return key;
 }
 
 export const sessionInit = async (event, context, callback) => {
@@ -124,8 +157,6 @@ export const callback = async (event) => {
     };
   }
 
-  // Your logic to handle the code and state parameters
-
   //form JWT
   const now = Math.floor(Date.now() / 1000);
   const payload = {
@@ -142,17 +173,13 @@ export const callback = async (event) => {
     typ: 'JWT',
   };
 
-  const privateKey = config.KEYS['PRIVATE_SIG_KEY']; // Ensure you have your private key in config
-  const ecPrivateKey = await jose.importJWK(
-    {
-      kty: privateKey.kty,
-      crv: privateKey.crv,
-      x: privateKey.x,
-      y: privateKey.y,
-      d: privateKey.d,
-    },
-    'ES256'
-  );
+  const ecPrivateKey = await getEcKey('PRIVATE_SIG_KEY');
+  if (!ecPrivateKey) {
+    return {
+      statusCode: 502,
+      body: JSON.stringify({ error: 'No key' }),
+    };
+  }
 
   const cookieHeader = event.headers.Cookie || event.headers.cookie;
   if (!cookieHeader) {
@@ -198,11 +225,11 @@ export const callback = async (event) => {
     // Set the encrypted user info in the session cookie
     const sessionData = JSON.stringify({ data: userinfo_response.data });
 
-    // Set the cookie options (these can be adjusted based on security needs)
+    // Set the cookie options
     const cookieOptions = {
       httpOnly: true, // Allows the cookie to be accessible via JavaScript
       secure: true, // Only sends cookie over HTTPS
-      maxAge: 3600, // 30s
+      maxAge: 30, // 30s
       path: '/',
       sameSite: 'none',
     };
@@ -239,31 +266,33 @@ export const getKey = async (event, context, callback) => {
 };
 
 export const serve = async (event, context, callback) => {
-  // Get the path parameter from the event
-  const filePath = event.pathParameters.proxy || 'index.html'; // Default to 'index.html' if no path is provided
-  console.log(filePath);
+  let path = event.path;
+  if (path === '/') {
+    path = 'index.html';
+  } else {
+    path = path.substring(1); // Remove the leading slash
+  }
+  const s3 = new AWS.S3();
   try {
     // Fetch the file from the S3 bucket
     const data = await s3
       .getObject({
         Bucket: 'sp-demo-jv',
-        Key: 'index.html',
+        Key: path,
       })
       .promise();
 
     console.log(data);
 
-    // Determine the content type based on the file extension
-    const contentType = getContentType(filePath);
+    const contentType = getContentType(path);
 
-    // Return the file content with the appropriate headers
     return {
       statusCode: 200,
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'max-age=3600', // Cache the file for 1 hour (adjust as needed)
+        'Cache-Control': 'max-age=60',
       },
-      body: data.Body.toString('utf-8'), // Convert the file data to string (text-based files like HTML, CSS, etc.)
+      body: data.Body.toString('utf-8'),
     };
   } catch (error) {
     console.error('Error fetching the file:', error);
@@ -290,20 +319,15 @@ export const user = async (event, context, callback) => {
     const sessionData = JSON.parse(decodeURIComponent(cookieHeader.split('data=')[1].split(';')[0]));
     if (!sessionData) {
       return {
-        statusCode: 401,
+        statusCode: 400,
       };
     } else {
-      const enc_key = config.KEYS['PRIVATE_ENC_KEY'];
-      const enc_private_key = await jose.importJWK(
-        {
-          kty: enc_key.kty,
-          crv: enc_key.crv,
-          x: enc_key.x,
-          y: enc_key.y,
-          d: enc_key.d,
-        },
-        'ECDH-ES+A256KW'
-      );
+      const enc_private_key = await getEcKey('PRIVATE_ENC_KEY');
+      if (!enc_private_key) {
+        return {
+          statusCode: 502,
+        };
+      }
 
       const { plaintext } = await jose.compactDecrypt(sessionData.data, enc_private_key);
       const decodedUserInfo = new TextDecoder().decode(plaintext);
@@ -311,7 +335,7 @@ export const user = async (event, context, callback) => {
       const response = {
         statusCode: 200,
         headers: {
-          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Origin': 'https://javierpng.github.io',
           'Access-Control-Allow-Credentials': true,
         },
         body: jwtPayload,
@@ -322,7 +346,7 @@ export const user = async (event, context, callback) => {
   } catch (error) {
     console.log(error);
     return {
-      statusCode: 403,
+      statusCode: 502,
     };
   }
 };
